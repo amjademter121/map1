@@ -1,0 +1,1003 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Indoor Map MVP - Pro UI</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Barcode Scanner (Camera) -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#0f1b33;
+      --panel2:#0b162c;
+      --card:#111f3b;
+      --text:#e8eefc;
+      --muted:#a9b6d4;
+      --line:#223457;
+      --primary:#2f6bff;
+      --primary2:#1f4fd1;
+      --success:#00c853;
+      --danger:#ff4d4f;
+      --warning:#ffb020;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 70% -10%, rgba(47,107,255,.25), transparent 55%),
+                  radial-gradient(900px 500px at 20% 0%, rgba(0,200,83,.18), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+    }
+
+    /* Layout */
+    .app{
+      min-height:100vh;
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    @media (max-width: 980px){
+      .app{
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Sidebar */
+    .sidebar{
+      background: linear-gradient(180deg, rgba(17,31,59,.95), rgba(15,27,51,.95));
+      border: 1px solid rgba(34,52,87,.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      position: sticky;
+      top: 16px;
+      height: calc(100vh - 32px);
+      overflow:auto;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(11,18,32,.45);
+      border: 1px solid rgba(34,52,87,.7);
+      margin-bottom: 14px;
+    }
+    .brand h1{
+      margin:0;
+      font-size: 16px;
+      letter-spacing:.2px;
+    }
+    .pill{
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(47,107,255,.18);
+      border: 1px solid rgba(47,107,255,.35);
+      color: var(--text);
+      white-space:nowrap;
+    }
+
+    .nav{
+      display:flex;
+      gap: 10px;
+      margin: 10px 0 14px;
+    }
+    .tab{
+      flex:1;
+      border: 1px solid rgba(34,52,87,.9);
+      background: rgba(11,18,32,.4);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      transition:.15s;
+      font-size: 14px;
+    }
+    .tab.active{
+      background: linear-gradient(180deg, rgba(47,107,255,.35), rgba(47,107,255,.12));
+      border-color: rgba(47,107,255,.55);
+    }
+
+    .section{
+      background: rgba(11,18,32,.35);
+      border: 1px solid rgba(34,52,87,.75);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section h2{
+      margin:0 0 10px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .row{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+    }
+
+    .field{
+      width:100%;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-bottom: 10px;
+    }
+    label{
+      font-size: 12px;
+      color: var(--muted);
+    }
+    input{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(34,52,87,.95);
+      background: rgba(11,18,32,.55);
+      color: var(--text);
+      outline:none;
+    }
+    input::placeholder{ color: rgba(169,182,212,.7); }
+
+    .btn{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(34,52,87,.95);
+      background: rgba(11,18,32,.45);
+      color: var(--text);
+      cursor:pointer;
+      transition:.15s;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .btn:hover{ transform: translateY(-1px); }
+    .btn.primary{
+      background: linear-gradient(180deg, rgba(47,107,255,.95), rgba(31,79,209,.92));
+      border-color: rgba(47,107,255,.7);
+    }
+    .btn.success{
+      background: linear-gradient(180deg, rgba(0,200,83,.9), rgba(0,150,62,.9));
+      border-color: rgba(0,200,83,.55);
+    }
+    .btn.danger{
+      background: linear-gradient(180deg, rgba(255,77,79,.9), rgba(200,40,42,.9));
+      border-color: rgba(255,77,79,.55);
+    }
+    .btn.warning{
+      background: linear-gradient(180deg, rgba(255,176,32,.92), rgba(200,130,20,.92));
+      border-color: rgba(255,176,32,.55);
+      color: #0b1220;
+      font-weight: 700;
+    }
+
+    .mini{
+      width:auto;
+      padding: 10px 10px;
+      font-size: 13px;
+    }
+
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 6px 0 0;
+    }
+
+    .divider{
+      border:0;
+      border-top: 1px solid rgba(34,52,87,.75);
+      margin: 10px 0;
+    }
+
+    /* Main */
+    .main{
+      background: linear-gradient(180deg, rgba(17,31,59,.55), rgba(15,27,51,.35));
+      border: 1px solid rgba(34,52,87,.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      min-height: calc(100vh - 32px);
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(34,52,87,.85);
+      background: rgba(11,18,32,.35);
+      gap: 12px;
+      flex-wrap:wrap;
+    }
+
+    .status{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex-wrap:wrap;
+    }
+
+    .badge{
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(11,18,32,.55);
+      border: 1px solid rgba(34,52,87,.9);
+      color: var(--text);
+    }
+
+    .content{
+      padding: 14px;
+    }
+
+    /* Pages */
+    .page{ display:none; }
+    .page.active{ display:block; }
+
+    #map{
+      height: calc(100vh - 32px - 60px - 28px);
+      min-height: 560px;
+      border-radius: 14px;
+      border: 1px solid rgba(34,52,87,.85);
+      overflow:hidden;
+      background: rgba(11,18,32,.25);
+    }
+
+    .scannerWrap{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .scannerCard{
+      background: rgba(11,18,32,.35);
+      border: 1px solid rgba(34,52,87,.85);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    #reader{
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+    .scanResult{
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(34,52,87,.85);
+      background: rgba(11,18,32,.45);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* Small helper text */
+    .kv{
+      display:grid;
+      grid-template-columns: 120px 1fr;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .kv b{ color: var(--text); font-weight: 700; }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div>
+          <h1>نظام خريطة متجر + باركود</h1>
+          <div class="hint">Indoor Navigation / Barcode Scan</div>
+        </div>
+        <span class="pill" id="modeBadge">الوضع: مستخدم</span>
+      </div>
+
+      <div class="nav">
+        <button class="tab active" id="tabMap">الخريطة والبحث</button>
+        <button class="tab" id="tabScan">فحص بالكاميرا</button>
+      </div>
+
+      <!-- USER SECTION -->
+      <div class="section" id="userSection">
+        <h2>بحث المستخدم</h2>
+
+        <div class="field">
+          <label>SKU / Barcode</label>
+          <input id="q" placeholder="مثال: milk أو 629100..." />
+        </div>
+
+        <div class="row">
+          <button class="btn primary" id="go">اذهب إلى المنتج</button>
+          <button class="btn" id="setMe">حدد موقعي (اضغط على الخريطة)</button>
+        </div>
+
+        <p class="hint">
+          إذا استخدمت صفحة الكاميرا، سيتم وضع رقم الباركود هنا تلقائياً ثم يتم توجيهك على الخريطة.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>الوضع</h2>
+        <button class="btn warning" id="toggleMode">التبديل إلى وضع الإدارة</button>
+        <hr class="divider">
+        <div class="kv">
+          <div>ملاحظة</div>
+          <div><b>الإدارة</b> لإضافة نقاط الممرات والمنتجات وحفظها.</div>
+        </div>
+      </div>
+
+      <!-- ADMIN SECTION -->
+      <div class="section admin-only" id="adminSection">
+        <h2>إدارة شبكة الممرات</h2>
+        <div class="row">
+          <button class="btn mini" id="addNode">أضف نقطة</button>
+          <button class="btn mini" id="addEdge">اربط نقطتين</button>
+          <button class="btn mini" id="stopMode">إيقاف</button>
+        </div>
+        <hr class="divider">
+        <div class="row">
+          <button class="btn mini success" id="saveGraph">حفظ الشبكة</button>
+          <button class="btn mini" id="loadGraph">تحميل الشبكة</button>
+          <button class="btn mini danger" id="clearGraph">مسح الشبكة</button>
+        </div>
+        <p class="hint">الشبكة تُحفظ في LocalStorage باسم: indoor_graph_v1</p>
+      </div>
+
+      <div class="section admin-only">
+        <h2>إدارة المنتجات</h2>
+
+        <div class="field">
+          <label>SKU (أو Barcode)</label>
+          <input id="sku" placeholder="مثال: milk أو 629100..." />
+        </div>
+
+        <div class="field">
+          <label>اسم المنتج (اختياري)</label>
+          <input id="pname" placeholder="مثال: حليب" />
+        </div>
+
+        <div class="row">
+          <button class="btn success" id="addProduct">إضافة منتج (اضغط على الخريطة)</button>
+        </div>
+
+        <hr class="divider">
+
+        <div class="row">
+          <button class="btn mini success" id="saveProducts">حفظ المنتجات</button>
+          <button class="btn mini" id="loadProducts">تحميل المنتجات</button>
+          <button class="btn mini danger" id="clearProducts">مسح المنتجات</button>
+        </div>
+
+        <p class="hint">المنتجات تُحفظ في LocalStorage باسم: indoor_products_v1</p>
+      </div>
+
+      <div class="section">
+        <h2>تشغيل الكاميرا</h2>
+        <p class="hint">
+          لتعمل الكاميرا على الهاتف: افتح الموقع عبر HTTPS أو استخدم localhost أثناء التطوير.
+        </p>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="topbar">
+        <div class="status">
+          <span class="badge" id="statusText">جاهز</span>
+          <span class="badge" id="buildModeText">وضع الممرات: متوقف</span>
+        </div>
+        <div class="status">
+          <span class="badge">خريطة داخلية: floor1.png</span>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- PAGE: MAP -->
+        <section class="page active" id="pageMap">
+          <div id="map"></div>
+        </section>
+
+        <!-- PAGE: SCAN -->
+        <section class="page" id="pageScan">
+          <div class="scannerWrap">
+            <div class="scannerCard">
+              <h2 style="margin:0 0 10px; font-size:16px;">فحص الباركود بالكاميرا</h2>
+              <div id="reader"></div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+                <button class="btn primary" id="startScan">تشغيل الكاميرا</button>
+                <button class="btn" id="stopScan">إيقاف الكاميرا</button>
+                <button class="btn" id="useManual">إدخال يدوي</button>
+              </div>
+              <p class="hint">
+                وجّه الكاميرا إلى باركود المنتج. عند القراءة سيتم نقل الرقم للبحث وتوجيهك على الخريطة.
+              </p>
+            </div>
+
+            <div class="scannerCard">
+              <h2 style="margin:0 0 10px; font-size:16px;">النتيجة</h2>
+              <div class="scanResult" id="scanResult">لا يوجد قراءة بعد.</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // =============================
+    // Routing (Tabs -> Pages)
+    // =============================
+    const tabMap = document.getElementById("tabMap");
+    const tabScan = document.getElementById("tabScan");
+    const pageMap = document.getElementById("pageMap");
+    const pageScan = document.getElementById("pageScan");
+
+    function showPage(name){
+      const isMap = (name === "map");
+      pageMap.classList.toggle("active", isMap);
+      pageScan.classList.toggle("active", !isMap);
+      tabMap.classList.toggle("active", isMap);
+      tabScan.classList.toggle("active", !isMap);
+
+      // Leaflet يحتاج invalidateSize عند تغيير display
+      if (isMap) {
+        setTimeout(() => map.invalidateSize(true), 120);
+      }
+    }
+
+    tabMap.onclick = () => showPage("map");
+    tabScan.onclick = () => showPage("scan");
+
+    // =============================
+    // UI helpers
+    // =============================
+    const statusText = document.getElementById("statusText");
+    const buildModeText = document.getElementById("buildModeText");
+    function setStatus(msg){ statusText.textContent = msg; }
+    function setBuildMode(msg){ buildModeText.textContent = msg; }
+
+    // =============================
+    // Map setup
+    // =============================
+    const IMG_W = 1280;
+    const IMG_H = 720;
+
+    const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2 });
+    const bounds = [[0, 0], [IMG_H, IMG_W]];
+    L.imageOverlay('floor1.png', bounds).addTo(map);
+    map.fitBounds(bounds);
+
+    // =============================
+    // Mode: Admin / User
+    // =============================
+    let isAdmin = false;
+
+    function applyModeUI() {
+      document.getElementById("modeBadge").textContent = isAdmin ? "الوضع: إدارة" : "الوضع: مستخدم";
+      document.getElementById("toggleMode").textContent = isAdmin ? "التبديل إلى وضع المستخدم" : "التبديل إلى وضع الإدارة";
+
+      const adminEls = document.querySelectorAll(".admin-only");
+      adminEls.forEach(el => el.style.display = isAdmin ? "block" : "none");
+
+      if (!isAdmin) {
+        mode = "none";
+        selectedForEdge = null;
+        pickingProduct = false;
+        pendingProduct = null;
+        setBuildMode("وضع الممرات: متوقف");
+      }
+    }
+
+    document.getElementById("toggleMode").onclick = () => {
+      isAdmin = !isAdmin;
+      applyModeUI();
+      setStatus(isAdmin ? "تم تفعيل وضع الإدارة" : "تم تفعيل وضع المستخدم");
+    };
+
+    // =============================
+    // Markers & Path
+    // =============================
+    let meMarker = null;
+    let itemMarker = null;
+
+    let pathLineOutline = null;
+    let pathLine = null;
+
+    // =============================
+    // Pick my location
+    // =============================
+    let pickingMe = false;
+    document.getElementById("setMe").onclick = () => {
+      pickingMe = true;
+      setStatus("اضغط على الخريطة لتحديد موقعك (A)");
+      alert("اضغط على مكانك داخل الخريطة لتحديد نقطة البداية (A).");
+    };
+
+    // =============================
+    // Graph (Nodes/Edges)
+    // =============================
+    let mode = "none";       // none | addNode | addEdge
+    let nodes = [];          // {id, x, y, marker}
+    let edges = {};          // id -> [{to, w}]
+    let selectedForEdge = null;
+
+    function dist(a, b) {
+      const dx = a.x - b.x, dy = a.y - b.y;
+      return Math.sqrt(dx*dx + dy*dy);
+    }
+
+    function addEdgeBidirectional(aId, bId, draw = true) {
+      const a = nodes.find(n => n.id === aId);
+      const b = nodes.find(n => n.id === bId);
+      if (!a || !b) return;
+
+      const w = dist(a, b);
+      edges[aId] = edges[aId] || [];
+      edges[bId] = edges[bId] || [];
+
+      const existsAB = edges[aId].some(e => e.to === bId);
+      const existsBA = edges[bId].some(e => e.to === aId);
+      if (!existsAB) edges[aId].push({ to: bId, w });
+      if (!existsBA) edges[bId].push({ to: aId, w });
+
+      if (draw) L.polyline([[a.y, a.x], [b.y, b.x]], {
+        color: "#9e9e9e",
+        weight: 3,
+        opacity: 0.6
+      }).addTo(map);
+    }
+
+    function nearestNode(x, y) {
+      let best = null, bestD = Infinity;
+      for (const n of nodes) {
+        const d = Math.hypot(n.x - x, n.y - y);
+        if (d < bestD) { bestD = d; best = n; }
+      }
+      return best;
+    }
+
+    function dijkstra(startId, endId) {
+      const Q = new Set(nodes.map(n => n.id));
+      const distMap = {};
+      const prev = {};
+      for (const n of nodes) distMap[n.id] = Infinity;
+      distMap[startId] = 0;
+
+      while (Q.size) {
+        let u = null, best = Infinity;
+        for (const id of Q) {
+          if (distMap[id] < best) { best = distMap[id]; u = id; }
+        }
+        if (u === null) break;
+        Q.delete(u);
+        if (u === endId) break;
+
+        for (const e of (edges[u] || [])) {
+          if (!Q.has(e.to)) continue;
+          const alt = distMap[u] + e.w;
+          if (alt < distMap[e.to]) {
+            distMap[e.to] = alt;
+            prev[e.to] = u;
+          }
+        }
+      }
+
+      const path = [];
+      let cur = endId;
+      while (cur !== undefined) {
+        path.push(cur);
+        if (cur === startId) break;
+        cur = prev[cur];
+      }
+      path.reverse();
+      return (path[0] === startId) ? path : [];
+    }
+
+    function saveGraphToLocalStorage() {
+      const payload = {
+        nodes: nodes.map(n => ({ id: n.id, x: n.x, y: n.y })),
+        edges
+      };
+      localStorage.setItem("indoor_graph_v1", JSON.stringify(payload));
+    }
+
+    function loadGraphFromLocalStorage() {
+      const raw = localStorage.getItem("indoor_graph_v1");
+      if (!raw) return false;
+      const payload = JSON.parse(raw);
+
+      nodes = (payload.nodes || []).map(n => ({ ...n, marker: null }));
+      edges = payload.edges || {};
+
+      drawLoadedGraph();
+      return true;
+    }
+
+    function clearGraphLocal() {
+      localStorage.removeItem("indoor_graph_v1");
+    }
+
+    function drawLoadedGraph() {
+      for (const n of nodes) {
+        const m = L.circleMarker([n.y, n.x], { radius: 6 }).addTo(map)
+          .bindPopup(`${n.id}<br>X=${Math.round(n.x)} Y=${Math.round(n.y)}`);
+        n.marker = m;
+      }
+      const drawn = new Set();
+      for (const fromId in edges) {
+        for (const e of (edges[fromId] || [])) {
+          const key = [fromId, e.to].sort().join("-");
+          if (drawn.has(key)) continue;
+          drawn.add(key);
+
+          const a = nodes.find(n => n.id === fromId);
+          const b = nodes.find(n => n.id === e.to);
+          if (a && b) L.polyline([[a.y, a.x], [b.y, b.x]], {
+            color: "#9e9e9e",
+            weight: 3,
+            opacity: 0.6
+          }).addTo(map);
+        }
+      }
+    }
+
+    document.getElementById("addNode").onclick = () => {
+      if (!isAdmin) return;
+      mode = "addNode";
+      selectedForEdge = null;
+      setBuildMode("وضع الممرات: إضافة نقاط");
+      alert("وضع إضافة نقاط: اضغط على الممر لإضافة نقطة.");
+    };
+
+    document.getElementById("addEdge").onclick = () => {
+      if (!isAdmin) return;
+      mode = "addEdge";
+      selectedForEdge = null;
+      setBuildMode("وضع الممرات: ربط نقطتين");
+      alert("وضع الربط: اضغط نقطة 1 ثم نقطة 2.");
+    };
+
+    document.getElementById("stopMode").onclick = () => {
+      if (!isAdmin) return;
+      mode = "none";
+      selectedForEdge = null;
+      setBuildMode("وضع الممرات: متوقف");
+      alert("تم إيقاف وضع الممرات.");
+    };
+
+    document.getElementById("saveGraph").onclick = () => {
+      if (!isAdmin) return;
+      if (nodes.length < 2) { alert("لا يوجد شبكة كافية للحفظ."); return; }
+      saveGraphToLocalStorage();
+      setStatus("تم حفظ الشبكة");
+      alert("تم حفظ الشبكة.");
+    };
+
+    document.getElementById("loadGraph").onclick = () => {
+      if (!isAdmin) return;
+      const ok = loadGraphFromLocalStorage();
+      if (!ok) alert("لا يوجد شبكة محفوظة.");
+      else alert("تم تحميل الشبكة. إذا ظهر تكرار، اعمل Refresh.");
+      setStatus(ok ? "تم تحميل الشبكة" : "لا توجد شبكة محفوظة");
+    };
+
+    document.getElementById("clearGraph").onclick = () => {
+      if (!isAdmin) return;
+      clearGraphLocal();
+      alert("تم مسح الشبكة المحفوظة. اعمل Refresh لمسح الرسم الحالي.");
+      setStatus("تم مسح الشبكة المحفوظة");
+    };
+
+    // =============================
+    // Products
+    // =============================
+    let products = []; // { sku, name, x, y }
+    let pickingProduct = false;
+    let pendingProduct = null;
+
+    function saveProductsToLocalStorage() {
+      localStorage.setItem("indoor_products_v1", JSON.stringify(products));
+    }
+    function loadProductsFromLocalStorage() {
+      const raw = localStorage.getItem("indoor_products_v1");
+      if (!raw) return false;
+      products = JSON.parse(raw) || [];
+      return true;
+    }
+    function clearProductsLocal() {
+      localStorage.removeItem("indoor_products_v1");
+    }
+    function addOrUpdateProduct(sku, name, x, y) {
+      const idx = products.findIndex(p => p.sku.toLowerCase() === sku.toLowerCase());
+      if (idx >= 0) products[idx] = { sku, name, x, y };
+      else products.push({ sku, name, x, y });
+    }
+
+    document.getElementById("addProduct").onclick = () => {
+      if (!isAdmin) return;
+
+      const sku = document.getElementById("sku").value.trim();
+      const name = document.getElementById("pname").value.trim();
+
+      if (!sku) { alert("أدخل SKU أولاً."); return; }
+
+      pendingProduct = { sku, name };
+      pickingProduct = true;
+      alert("اضغط على مكان المنتج على الخريطة لحفظه.");
+      setStatus("إضافة منتج: اضغط على الخريطة لتحديد مكان المنتج");
+      showPage("map");
+    };
+
+    document.getElementById("saveProducts").onclick = () => {
+      if (!isAdmin) return;
+      saveProductsToLocalStorage();
+      setStatus("تم حفظ المنتجات");
+      alert("تم حفظ المنتجات.");
+    };
+
+    document.getElementById("loadProducts").onclick = () => {
+      if (!isAdmin) return;
+      const ok = loadProductsFromLocalStorage();
+      setStatus(ok ? "تم تحميل المنتجات" : "لا توجد منتجات محفوظة");
+      if (!ok) alert("لا يوجد منتجات محفوظة.");
+      else alert("تم تحميل المنتجات.");
+    };
+
+    document.getElementById("clearProducts").onclick = () => {
+      if (!isAdmin) return;
+      clearProductsLocal();
+      products = [];
+      setStatus("تم مسح المنتجات");
+      alert("تم مسح المنتجات.");
+    };
+
+    // =============================
+    // Map click behavior
+    // =============================
+    map.on('click', (e) => {
+      const y = e.latlng.lat;
+      const x = e.latlng.lng;
+
+      // pick my location
+      if (pickingMe) {
+        pickingMe = false;
+        if (meMarker) map.removeLayer(meMarker);
+        meMarker = L.marker([y, x]).addTo(map)
+          .bindPopup(`موقعي<br>X=${Math.round(x)} Y=${Math.round(y)}`)
+          .openPopup();
+        setStatus("تم تحديد موقعك");
+        return;
+      }
+
+      // admin: add product
+      if (isAdmin && pickingProduct && pendingProduct) {
+        pickingProduct = false;
+
+        addOrUpdateProduct(pendingProduct.sku, pendingProduct.name, x, y);
+        saveProductsToLocalStorage();
+
+        L.marker([y, x]).addTo(map).bindPopup(
+          `تم حفظ المنتج<br>SKU: ${pendingProduct.sku}${pendingProduct.name ? "<br>اسم: " + pendingProduct.name : ""}`
+        ).openPopup();
+
+        pendingProduct = null;
+        document.getElementById("sku").value = "";
+        document.getElementById("pname").value = "";
+        setStatus("تم حفظ المنتج على الخريطة");
+        return;
+      }
+
+      // admin: add node
+      if (isAdmin && mode === "addNode") {
+        const id = "N" + (nodes.length + 1);
+        const m = L.circleMarker([y, x], { radius: 6 }).addTo(map)
+          .bindPopup(`${id}<br>X=${Math.round(x)} Y=${Math.round(y)}`);
+        nodes.push({ id, x, y, marker: m });
+        setStatus("تم إضافة نقطة ممر");
+        return;
+      }
+
+      // admin: add edge
+      if (isAdmin && mode === "addEdge") {
+        const n = nearestNode(x, y);
+        if (!n) { alert("لا يوجد نقاط بعد."); return; }
+
+        if (!selectedForEdge) {
+          selectedForEdge = n;
+          n.marker.openPopup();
+          alert("اختر النقطة الثانية.");
+          setStatus("اختر النقطة الثانية للربط");
+        } else {
+          if (selectedForEdge.id === n.id) return;
+          addEdgeBidirectional(selectedForEdge.id, n.id, true);
+          selectedForEdge = null;
+          alert("تم الربط.");
+          setStatus("تم ربط نقطتين");
+        }
+      }
+    });
+
+    // =============================
+    // Search & Navigate
+    // =============================
+    function navigateToSKU(rawSku){
+      const q = (rawSku || "").trim().toLowerCase();
+      if (!q) { alert("اكتب SKU للبحث."); return; }
+
+      const item = products.find(p => p.sku.toLowerCase() === q);
+      if (!item) { alert("SKU غير موجود. اطلب من الإدارة إضافته."); return; }
+
+      if (!meMarker) { alert("حدد موقعك أولاً."); return; }
+      if (nodes.length < 2) { alert("شبكة الممرات غير جاهزة. اطلب من الإدارة تحميلها."); return; }
+
+      if (itemMarker) map.removeLayer(itemMarker);
+      itemMarker = L.marker([item.y, item.x]).addTo(map)
+        .bindPopup(`المنتج<br>SKU: ${item.sku}${item.name ? "<br>اسم: " + item.name : ""}`)
+        .openPopup();
+
+      const mePos = meMarker.getLatLng();
+      const startNode = nearestNode(mePos.lng, mePos.lat);
+      const endNode = nearestNode(item.x, item.y);
+
+      if (!startNode || !endNode) { alert("لا توجد نقاط ممر قريبة."); return; }
+
+      const pathIds = dijkstra(startNode.id, endNode.id);
+      if (!pathIds.length) { alert("لا يوجد مسار. الشبكة تحتاج ربط."); return; }
+
+      const pathLatLngs = pathIds.map(id => {
+        const n = nodes.find(nn => nn.id === id);
+        return [n.y, n.x];
+      });
+
+      // reach item
+      pathLatLngs.push([item.y, item.x]);
+
+      // draw path (outline + inner)
+      if (pathLineOutline) map.removeLayer(pathLineOutline);
+      if (pathLine) map.removeLayer(pathLine);
+
+      pathLineOutline = L.polyline(pathLatLngs, {
+        color: "#000000",
+        weight: 12,
+        opacity: 0.5,
+        lineJoin: "round",
+        lineCap: "round"
+      }).addTo(map);
+
+      pathLine = L.polyline(pathLatLngs, {
+        color: "#00c853",
+        weight: 8,
+        opacity: 0.95,
+        lineJoin: "round",
+        lineCap: "round"
+      }).addTo(map);
+
+      const group = L.featureGroup([meMarker, itemMarker, pathLineOutline, pathLine]);
+      map.fitBounds(group.getBounds().pad(0.2));
+
+      setStatus("تم رسم أقصر مسار إلى المنتج");
+    }
+
+    document.getElementById("go").onclick = () => {
+      navigateToSKU(document.getElementById("q").value);
+    };
+
+    // =============================
+    // Camera Scan Page
+    // =============================
+    const scanResult = document.getElementById("scanResult");
+    const startScanBtn = document.getElementById("startScan");
+    const stopScanBtn = document.getElementById("stopScan");
+    const useManualBtn = document.getElementById("useManual");
+
+    let scanner = null;
+    let scanning = false;
+
+    function setScanText(msg){
+      scanResult.textContent = msg;
+    }
+
+    async function startScanner(){
+      if (scanning) return;
+      scanning = true;
+
+      try{
+        if (!scanner) scanner = new Html5Qrcode("reader");
+
+        setScanText("جارٍ تشغيل الكاميرا...");
+        setStatus("الكاميرا تعمل - وجّهها نحو الباركود");
+
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 12, qrbox: 260 },
+          async (decodedText) => {
+            // SUCCESS: barcode decoded
+            setScanText("تمت القراءة: " + decodedText);
+            document.getElementById("q").value = decodedText;
+
+            // stop scanner then go to map + auto navigate
+            await stopScanner(true);
+
+            showPage("map");
+            setTimeout(() => {
+              // Auto go
+              navigateToSKU(decodedText);
+            }, 180);
+          },
+          () => {}
+        );
+
+        setScanText("الكاميرا جاهزة. حاول تثبيت الهاتف وتحسين الإضاءة.");
+      } catch (err){
+        scanning = false;
+        setScanText("تعذر تشغيل الكاميرا. تأكد من HTTPS ومن إعطاء الإذن للكاميرا.");
+        setStatus("فشل تشغيل الكاميرا");
+        console.error(err);
+      }
+    }
+
+    async function stopScanner(silent=false){
+      if (!scanner) { scanning = false; return; }
+      try{
+        if (scanner.isScanning) {
+          await scanner.stop();
+        }
+        await scanner.clear();
+      } catch(e){
+        // ignore
+      } finally {
+        scanning = false;
+        if (!silent){
+          setScanText("تم إيقاف الكاميرا.");
+          setStatus("تم إيقاف الكاميرا");
+        }
+      }
+    }
+
+    startScanBtn.onclick = () => startScanner();
+    stopScanBtn.onclick = () => stopScanner(false);
+
+    useManualBtn.onclick = () => {
+      const val = prompt("أدخل SKU/Barcode يدوياً:");
+      if (!val) return;
+      document.getElementById("q").value = val.trim();
+      showPage("map");
+      setTimeout(() => navigateToSKU(val.trim()), 120);
+    };
+
+    // When switching pages: if leaving scan page, stop camera for safety
+    tabMap.addEventListener("click", () => stopScanner(true));
+
+    // =============================
+    // Auto-load stored data
+    // =============================
+    loadGraphFromLocalStorage();
+    loadProductsFromLocalStorage();
+    applyModeUI();
+    setStatus("جاهز");
+  </script>
+</body>
+</html>
