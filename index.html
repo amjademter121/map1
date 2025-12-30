@@ -2,8 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Indoor Map MVP - Mobile Ready</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Indoor Map MVP - Pro UI</title>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -16,10 +16,13 @@
     :root{
       --bg:#0b1220;
       --panel:#0f1b33;
+      --panel2:#0b162c;
+      --card:#111f3b;
       --text:#e8eefc;
       --muted:#a9b6d4;
       --line:#223457;
       --primary:#2f6bff;
+      --primary2:#1f4fd1;
       --success:#00c853;
       --danger:#ff4d4f;
       --warning:#ffb020;
@@ -35,43 +38,51 @@
                   radial-gradient(900px 500px at 20% 0%, rgba(0,200,83,.18), transparent 60%),
                   var(--bg);
       color:var(--text);
-      -webkit-text-size-adjust: 100%;
     }
 
-    /* ============ Mobile-first Layout ============ */
+    /* Layout */
     .app{
-      min-height: 100vh;
-      min-height: 100dvh; /* أفضل للموبايل */
-      display:flex;
-      flex-direction:column;
-      gap: 12px;
-      padding: 12px;
+      min-height:100vh;
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap: 16px;
+      padding: 16px;
     }
 
-    /* Top Controls (replaces sticky sidebar on mobile) */
-    .controls{
+    @media (max-width: 980px){
+      .app{
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Sidebar */
+    .sidebar{
       background: linear-gradient(180deg, rgba(17,31,59,.95), rgba(15,27,51,.95));
       border: 1px solid rgba(34,52,87,.9);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 12px;
+      padding: 16px;
+      position: sticky;
+      top: 16px;
+      height: calc(100vh - 32px);
+      overflow:auto;
     }
 
     .brand{
       display:flex;
-      align-items:flex-start;
+      align-items:center;
       justify-content:space-between;
-      gap: 10px;
+      gap: 12px;
       padding: 10px 12px;
       border-radius: 14px;
       background: rgba(11,18,32,.45);
       border: 1px solid rgba(34,52,87,.7);
-      margin-bottom: 10px;
+      margin-bottom: 14px;
     }
     .brand h1{
       margin:0;
-      font-size: 15px;
-      line-height: 1.4;
+      font-size: 16px;
+      letter-spacing:.2px;
     }
     .pill{
       font-size: 12px;
@@ -81,13 +92,12 @@
       border: 1px solid rgba(47,107,255,.35);
       color: var(--text);
       white-space:nowrap;
-      margin-top: 2px;
     }
 
     .nav{
       display:flex;
       gap: 10px;
-      margin: 10px 0 10px;
+      margin: 10px 0 14px;
     }
     .tab{
       flex:1;
@@ -110,11 +120,13 @@
       border: 1px solid rgba(34,52,87,.75);
       border-radius: 14px;
       padding: 12px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
+
     .section h2{
       margin:0 0 10px;
       font-size: 14px;
+      color: var(--text);
     }
 
     .row{
@@ -142,7 +154,6 @@
       background: rgba(11,18,32,.55);
       color: var(--text);
       outline:none;
-      font-size: 16px; /* مهم للموبايل لمنع zoom التلقائي */
     }
     input::placeholder{ color: rgba(169,182,212,.7); }
 
@@ -161,39 +172,73 @@
       gap: 8px;
       font-size: 14px;
     }
-    .btn.primary{ background: linear-gradient(180deg, rgba(47,107,255,.95), rgba(31,79,209,.92)); border-color: rgba(47,107,255,.7); }
-    .btn.success{ background: linear-gradient(180deg, rgba(0,200,83,.9), rgba(0,150,62,.9)); border-color: rgba(0,200,83,.55); }
-    .btn.danger{ background: linear-gradient(180deg, rgba(255,77,79,.9), rgba(200,40,42,.9)); border-color: rgba(255,77,79,.55); }
-    .btn.warning{ background: linear-gradient(180deg, rgba(255,176,32,.92), rgba(200,130,20,.92)); border-color: rgba(255,176,32,.55); color:#0b1220; font-weight:700; }
+    .btn:hover{ transform: translateY(-1px); }
+    .btn.primary{
+      background: linear-gradient(180deg, rgba(47,107,255,.95), rgba(31,79,209,.92));
+      border-color: rgba(47,107,255,.7);
+    }
+    .btn.success{
+      background: linear-gradient(180deg, rgba(0,200,83,.9), rgba(0,150,62,.9));
+      border-color: rgba(0,200,83,.55);
+    }
+    .btn.danger{
+      background: linear-gradient(180deg, rgba(255,77,79,.9), rgba(200,40,42,.9));
+      border-color: rgba(255,77,79,.55);
+    }
+    .btn.warning{
+      background: linear-gradient(180deg, rgba(255,176,32,.92), rgba(200,130,20,.92));
+      border-color: rgba(255,176,32,.55);
+      color: #0b1220;
+      font-weight: 700;
+    }
 
-    .mini{ width:auto; padding: 10px 10px; font-size: 13px; }
+    .mini{
+      width:auto;
+      padding: 10px 10px;
+      font-size: 13px;
+    }
 
-    .hint{ font-size: 12px; color: var(--muted); line-height: 1.6; margin: 6px 0 0; }
-    .divider{ border:0; border-top: 1px solid rgba(34,52,87,.75); margin: 10px 0; }
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 6px 0 0;
+    }
 
-    /* Main content */
+    .divider{
+      border:0;
+      border-top: 1px solid rgba(34,52,87,.75);
+      margin: 10px 0;
+    }
+
+    /* Main */
     .main{
-      flex:1;
       background: linear-gradient(180deg, rgba(17,31,59,.55), rgba(15,27,51,.35));
       border: 1px solid rgba(34,52,87,.9);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow:hidden;
-      display:flex;
-      flex-direction:column;
-      min-height: 0; /* مهم للتمرير */
+      min-height: calc(100vh - 32px);
     }
 
     .topbar{
       display:flex;
       justify-content:space-between;
       align-items:center;
-      padding: 10px 12px;
+      padding: 12px 14px;
       border-bottom: 1px solid rgba(34,52,87,.85);
       background: rgba(11,18,32,.35);
-      gap: 8px;
+      gap: 12px;
       flex-wrap:wrap;
     }
+
+    .status{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex-wrap:wrap;
+    }
+
     .badge{
       font-size: 12px;
       padding: 7px 10px;
@@ -204,38 +249,37 @@
     }
 
     .content{
-      padding: 12px;
-      min-height: 0;
-      flex:1;
+      padding: 14px;
     }
 
-    .page{ display:none; height:100%; }
+    /* Pages */
+    .page{ display:none; }
     .page.active{ display:block; }
 
-    /* Map: use dvh and allow proper touch */
     #map{
-      height: 60vh;
-      height: 60dvh;
-      min-height: 420px;
+      height: calc(100vh - 32px - 60px - 28px);
+      min-height: 560px;
       border-radius: 14px;
       border: 1px solid rgba(34,52,87,.85);
       overflow:hidden;
       background: rgba(11,18,32,.25);
-      touch-action: manipulation; /* يقلل مشاكل اللمس */
     }
 
-    /* Scanner */
-    #reader{
-      width: 100%;
-      max-width: 560px;
-      margin: 0 auto;
+    .scannerWrap{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
     }
     .scannerCard{
       background: rgba(11,18,32,.35);
       border: 1px solid rgba(34,52,87,.85);
       border-radius: 14px;
       padding: 12px;
-      margin-bottom: 10px;
+    }
+    #reader{
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
     }
     .scanResult{
       padding: 10px 12px;
@@ -247,54 +291,42 @@
       line-height: 1.6;
     }
 
-    /* Desktop enhancement (optional): two columns) */
-    @media (min-width: 981px){
-      .app{
-        display:grid;
-        grid-template-columns: 360px 1fr;
-        gap: 16px;
-        padding: 16px;
-        min-height: 100vh;
-        min-height: 100dvh;
-      }
-      .controls{
-        position: sticky;
-        top: 16px;
-        height: calc(100vh - 32px);
-        overflow:auto;
-      }
-      #map{
-        height: calc(100vh - 32px - 56px - 24px);
-        min-height: 560px;
-      }
+    /* Small helper text */
+    .kv{
+      display:grid;
+      grid-template-columns: 120px 1fr;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
     }
+    .kv b{ color: var(--text); font-weight: 700; }
   </style>
 </head>
 
 <body>
   <div class="app">
-    <!-- CONTROLS -->
-    <aside class="controls">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
       <div class="brand">
         <div>
           <h1>نظام خريطة متجر + باركود</h1>
-          <div class="hint">مناسب للموبايل (تجربة + كاميرا)</div>
+          <div class="hint">Indoor Navigation / Barcode Scan</div>
         </div>
         <span class="pill" id="modeBadge">الوضع: مستخدم</span>
       </div>
 
       <div class="nav">
-        <button class="tab active" id="tabMap">الخريطة</button>
-        <button class="tab" id="tabScan">الكاميرا</button>
+        <button class="tab active" id="tabMap">الخريطة والبحث</button>
+        <button class="tab" id="tabScan">فحص بالكاميرا</button>
       </div>
 
-      <!-- USER -->
-      <div class="section">
+      <!-- USER SECTION -->
+      <div class="section" id="userSection">
         <h2>بحث المستخدم</h2>
 
         <div class="field">
           <label>SKU / Barcode</label>
-          <input id="q" placeholder="مثال: 629100..." inputmode="numeric" />
+          <input id="q" placeholder="مثال: milk أو 629100..." />
         </div>
 
         <div class="row">
@@ -302,17 +334,23 @@
           <button class="btn" id="setMe">حدد موقعي (اضغط على الخريطة)</button>
         </div>
 
-        <p class="hint">مهم: الكاميرا تحتاج HTTPS. على GitHub Pages تعمل مباشرة.</p>
+        <p class="hint">
+          إذا استخدمت صفحة الكاميرا، سيتم وضع رقم الباركود هنا تلقائياً ثم يتم توجيهك على الخريطة.
+        </p>
       </div>
 
       <div class="section">
         <h2>الوضع</h2>
         <button class="btn warning" id="toggleMode">التبديل إلى وضع الإدارة</button>
-        <p class="hint">وضع الإدارة لإضافة نقاط الممرات والمنتجات.</p>
+        <hr class="divider">
+        <div class="kv">
+          <div>ملاحظة</div>
+          <div><b>الإدارة</b> لإضافة نقاط الممرات والمنتجات وحفظها.</div>
+        </div>
       </div>
 
-      <!-- ADMIN -->
-      <div class="section admin-only" style="display:none;">
+      <!-- ADMIN SECTION -->
+      <div class="section admin-only" id="adminSection">
         <h2>إدارة شبكة الممرات</h2>
         <div class="row">
           <button class="btn mini" id="addNode">أضف نقطة</button>
@@ -325,32 +363,41 @@
           <button class="btn mini" id="loadGraph">تحميل الشبكة</button>
           <button class="btn mini danger" id="clearGraph">مسح الشبكة</button>
         </div>
+        <p class="hint">الشبكة تُحفظ في LocalStorage باسم: indoor_graph_v1</p>
       </div>
 
-      <div class="section admin-only" style="display:none;">
+      <div class="section admin-only">
         <h2>إدارة المنتجات</h2>
+
         <div class="field">
           <label>SKU (أو Barcode)</label>
-          <input id="sku" placeholder="629100..." inputmode="numeric" />
+          <input id="sku" placeholder="مثال: milk أو 629100..." />
         </div>
+
         <div class="field">
           <label>اسم المنتج (اختياري)</label>
           <input id="pname" placeholder="مثال: حليب" />
         </div>
-        <button class="btn success" id="addProduct">إضافة منتج (اضغط على الخريطة)</button>
+
+        <div class="row">
+          <button class="btn success" id="addProduct">إضافة منتج (اضغط على الخريطة)</button>
+        </div>
 
         <hr class="divider">
+
         <div class="row">
           <button class="btn mini success" id="saveProducts">حفظ المنتجات</button>
           <button class="btn mini" id="loadProducts">تحميل المنتجات</button>
           <button class="btn mini danger" id="clearProducts">مسح المنتجات</button>
         </div>
+
+        <p class="hint">المنتجات تُحفظ في LocalStorage باسم: indoor_products_v1</p>
       </div>
 
       <div class="section">
-        <h2>تنبيه مهم</h2>
+        <h2>تشغيل الكاميرا</h2>
         <p class="hint">
-          لا تفتح الملف كـ (file://). ارفعه على GitHub Pages أو شغّله عبر HTTPS لكي تعمل الكاميرا.
+          لتعمل الكاميرا على الهاتف: افتح الموقع عبر HTTPS أو استخدم localhost أثناء التطوير.
         </p>
       </div>
     </aside>
@@ -358,36 +405,41 @@
     <!-- MAIN -->
     <main class="main">
       <div class="topbar">
-        <div class="badge" id="statusText">جاهز</div>
-        <div class="badge" id="buildModeText">وضع الممرات: متوقف</div>
+        <div class="status">
+          <span class="badge" id="statusText">جاهز</span>
+          <span class="badge" id="buildModeText">وضع الممرات: متوقف</span>
+        </div>
+        <div class="status">
+          <span class="badge">خريطة داخلية: floor1.png</span>
+        </div>
       </div>
 
       <div class="content">
-        <!-- MAP PAGE -->
+        <!-- PAGE: MAP -->
         <section class="page active" id="pageMap">
           <div id="map"></div>
         </section>
 
-        <!-- SCAN PAGE -->
+        <!-- PAGE: SCAN -->
         <section class="page" id="pageScan">
-          <div class="scannerCard">
-            <h2 style="margin:0 0 10px; font-size:16px;">فحص الباركود بالكاميرا</h2>
-            <div id="reader"></div>
-
-            <div class="row" style="margin-top:12px;">
-              <button class="btn primary" id="startScan">تشغيل الكاميرا</button>
-              <button class="btn" id="stopScan">إيقاف الكاميرا</button>
-              <button class="btn" id="useManual">إدخال يدوي</button>
+          <div class="scannerWrap">
+            <div class="scannerCard">
+              <h2 style="margin:0 0 10px; font-size:16px;">فحص الباركود بالكاميرا</h2>
+              <div id="reader"></div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+                <button class="btn primary" id="startScan">تشغيل الكاميرا</button>
+                <button class="btn" id="stopScan">إيقاف الكاميرا</button>
+                <button class="btn" id="useManual">إدخال يدوي</button>
+              </div>
+              <p class="hint">
+                وجّه الكاميرا إلى باركود المنتج. عند القراءة سيتم نقل الرقم للبحث وتوجيهك على الخريطة.
+              </p>
             </div>
 
-            <p class="hint">
-              على iPhone إذا لم تفتح الكاميرا الخلفية، اضغط تشغيل مرة أخرى أو اعتمد على اختيار الجهاز تلقائياً.
-            </p>
-          </div>
-
-          <div class="scannerCard">
-            <h2 style="margin:0 0 10px; font-size:16px;">النتيجة</h2>
-            <div class="scanResult" id="scanResult">لا يوجد قراءة بعد.</div>
+            <div class="scannerCard">
+              <h2 style="margin:0 0 10px; font-size:16px;">النتيجة</h2>
+              <div class="scanResult" id="scanResult">لا يوجد قراءة بعد.</div>
+            </div>
           </div>
         </section>
       </div>
@@ -396,7 +448,7 @@
 
   <script>
     // =============================
-    // Pages
+    // Routing (Tabs -> Pages)
     // =============================
     const tabMap = document.getElementById("tabMap");
     const tabScan = document.getElementById("tabScan");
@@ -410,23 +462,20 @@
       tabMap.classList.toggle("active", isMap);
       tabScan.classList.toggle("active", !isMap);
 
+      // Leaflet يحتاج invalidateSize عند تغيير display
       if (isMap) {
-        // Leaflet داخل Tabs: لازم invalidate بعد ما الصفحة تظهر فعلاً
-        setTimeout(() => map.invalidateSize(true), 150);
-        setTimeout(() => map.invalidateSize(true), 500);
+        setTimeout(() => map.invalidateSize(true), 120);
       }
     }
 
-    tabMap.onclick = () => { stopScanner(true); showPage("map"); };
+    tabMap.onclick = () => showPage("map");
     tabScan.onclick = () => showPage("scan");
 
     // =============================
-    // Status UI
+    // UI helpers
     // =============================
     const statusText = document.getElementById("statusText");
     const buildModeText = document.getElementById("buildModeText");
-    const adminEls = document.querySelectorAll(".admin-only");
-
     function setStatus(msg){ statusText.textContent = msg; }
     function setBuildMode(msg){ buildModeText.textContent = msg; }
 
@@ -436,24 +485,10 @@
     const IMG_W = 1280;
     const IMG_H = 720;
 
-    const map = L.map('map', {
-      crs: L.CRS.Simple,
-      minZoom: -2,
-      zoomControl: true,
-      attributionControl: false
-    });
-
+    const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2 });
     const bounds = [[0, 0], [IMG_H, IMG_W]];
     L.imageOverlay('floor1.png', bounds).addTo(map);
     map.fitBounds(bounds);
-
-    // تحديث عند تدوير الشاشة (مهم للموبايل)
-    window.addEventListener("orientationchange", () => {
-      setTimeout(() => map.invalidateSize(true), 400);
-    });
-    window.addEventListener("resize", () => {
-      setTimeout(() => map.invalidateSize(true), 250);
-    });
 
     // =============================
     // Mode: Admin / User
@@ -464,6 +499,7 @@
       document.getElementById("modeBadge").textContent = isAdmin ? "الوضع: إدارة" : "الوضع: مستخدم";
       document.getElementById("toggleMode").textContent = isAdmin ? "التبديل إلى وضع المستخدم" : "التبديل إلى وضع الإدارة";
 
+      const adminEls = document.querySelectorAll(".admin-only");
       adminEls.forEach(el => el.style.display = isAdmin ? "block" : "none");
 
       if (!isAdmin) {
@@ -486,6 +522,7 @@
     // =============================
     let meMarker = null;
     let itemMarker = null;
+
     let pathLineOutline = null;
     let pathLine = null;
 
@@ -497,7 +534,6 @@
       pickingMe = true;
       setStatus("اضغط على الخريطة لتحديد موقعك (A)");
       alert("اضغط على مكانك داخل الخريطة لتحديد نقطة البداية (A).");
-      showPage("map");
     };
 
     // =============================
@@ -581,7 +617,10 @@
     }
 
     function saveGraphToLocalStorage() {
-      const payload = { nodes: nodes.map(n => ({ id: n.id, x: n.x, y: n.y })), edges };
+      const payload = {
+        nodes: nodes.map(n => ({ id: n.id, x: n.x, y: n.y })),
+        edges
+      };
       localStorage.setItem("indoor_graph_v1", JSON.stringify(payload));
     }
 
@@ -592,11 +631,14 @@
 
       nodes = (payload.nodes || []).map(n => ({ ...n, marker: null }));
       edges = payload.edges || {};
+
       drawLoadedGraph();
       return true;
     }
 
-    function clearGraphLocal() { localStorage.removeItem("indoor_graph_v1"); }
+    function clearGraphLocal() {
+      localStorage.removeItem("indoor_graph_v1");
+    }
 
     function drawLoadedGraph() {
       for (const n of nodes) {
@@ -628,7 +670,6 @@
       selectedForEdge = null;
       setBuildMode("وضع الممرات: إضافة نقاط");
       alert("وضع إضافة نقاط: اضغط على الممر لإضافة نقطة.");
-      showPage("map");
     };
 
     document.getElementById("addEdge").onclick = () => {
@@ -637,7 +678,6 @@
       selectedForEdge = null;
       setBuildMode("وضع الممرات: ربط نقطتين");
       alert("وضع الربط: اضغط نقطة 1 ثم نقطة 2.");
-      showPage("map");
     };
 
     document.getElementById("stopMode").onclick = () => {
@@ -659,17 +699,16 @@
     document.getElementById("loadGraph").onclick = () => {
       if (!isAdmin) return;
       const ok = loadGraphFromLocalStorage();
+      if (!ok) alert("لا يوجد شبكة محفوظة.");
+      else alert("تم تحميل الشبكة. إذا ظهر تكرار، اعمل Refresh.");
       setStatus(ok ? "تم تحميل الشبكة" : "لا توجد شبكة محفوظة");
-      alert(ok ? "تم تحميل الشبكة." : "لا يوجد شبكة محفوظة.");
-      showPage("map");
-      setTimeout(() => map.invalidateSize(true), 250);
     };
 
     document.getElementById("clearGraph").onclick = () => {
       if (!isAdmin) return;
       clearGraphLocal();
-      setStatus("تم مسح الشبكة المحفوظة");
       alert("تم مسح الشبكة المحفوظة. اعمل Refresh لمسح الرسم الحالي.");
+      setStatus("تم مسح الشبكة المحفوظة");
     };
 
     // =============================
@@ -688,8 +727,9 @@
       products = JSON.parse(raw) || [];
       return true;
     }
-    function clearProductsLocal() { localStorage.removeItem("indoor_products_v1"); }
-
+    function clearProductsLocal() {
+      localStorage.removeItem("indoor_products_v1");
+    }
     function addOrUpdateProduct(sku, name, x, y) {
       const idx = products.findIndex(p => p.sku.toLowerCase() === sku.toLowerCase());
       if (idx >= 0) products[idx] = { sku, name, x, y };
@@ -698,14 +738,16 @@
 
     document.getElementById("addProduct").onclick = () => {
       if (!isAdmin) return;
+
       const sku = document.getElementById("sku").value.trim();
       const name = document.getElementById("pname").value.trim();
+
       if (!sku) { alert("أدخل SKU أولاً."); return; }
 
       pendingProduct = { sku, name };
       pickingProduct = true;
-      setStatus("إضافة منتج: اضغط على الخريطة لتحديد مكان المنتج");
       alert("اضغط على مكان المنتج على الخريطة لحفظه.");
+      setStatus("إضافة منتج: اضغط على الخريطة لتحديد مكان المنتج");
       showPage("map");
     };
 
@@ -720,7 +762,8 @@
       if (!isAdmin) return;
       const ok = loadProductsFromLocalStorage();
       setStatus(ok ? "تم تحميل المنتجات" : "لا توجد منتجات محفوظة");
-      alert(ok ? "تم تحميل المنتجات." : "لا يوجد منتجات محفوظة.");
+      if (!ok) alert("لا يوجد منتجات محفوظة.");
+      else alert("تم تحميل المنتجات.");
     };
 
     document.getElementById("clearProducts").onclick = () => {
@@ -732,12 +775,13 @@
     };
 
     // =============================
-    // Map click
+    // Map click behavior
     // =============================
     map.on('click', (e) => {
       const y = e.latlng.lat;
       const x = e.latlng.lng;
 
+      // pick my location
       if (pickingMe) {
         pickingMe = false;
         if (meMarker) map.removeLayer(meMarker);
@@ -748,8 +792,10 @@
         return;
       }
 
+      // admin: add product
       if (isAdmin && pickingProduct && pendingProduct) {
         pickingProduct = false;
+
         addOrUpdateProduct(pendingProduct.sku, pendingProduct.name, x, y);
         saveProductsToLocalStorage();
 
@@ -764,6 +810,7 @@
         return;
       }
 
+      // admin: add node
       if (isAdmin && mode === "addNode") {
         const id = "N" + (nodes.length + 1);
         const m = L.circleMarker([y, x], { radius: 6 }).addTo(map)
@@ -773,6 +820,7 @@
         return;
       }
 
+      // admin: add edge
       if (isAdmin && mode === "addEdge") {
         const n = nearestNode(x, y);
         if (!n) { alert("لا يوجد نقاط بعد."); return; }
@@ -780,14 +828,14 @@
         if (!selectedForEdge) {
           selectedForEdge = n;
           n.marker.openPopup();
-          setStatus("اختر النقطة الثانية للربط");
           alert("اختر النقطة الثانية.");
+          setStatus("اختر النقطة الثانية للربط");
         } else {
           if (selectedForEdge.id === n.id) return;
           addEdgeBidirectional(selectedForEdge.id, n.id, true);
           selectedForEdge = null;
-          setStatus("تم ربط نقطتين");
           alert("تم الربط.");
+          setStatus("تم ربط نقطتين");
         }
       }
     });
@@ -824,8 +872,10 @@
         return [n.y, n.x];
       });
 
+      // reach item
       pathLatLngs.push([item.y, item.x]);
 
+      // draw path (outline + inner)
       if (pathLineOutline) map.removeLayer(pathLineOutline);
       if (pathLine) map.removeLayer(pathLine);
 
@@ -847,15 +897,16 @@
 
       const group = L.featureGroup([meMarker, itemMarker, pathLineOutline, pathLine]);
       map.fitBounds(group.getBounds().pad(0.2));
+
       setStatus("تم رسم أقصر مسار إلى المنتج");
-      showPage("map");
-      setTimeout(() => map.invalidateSize(true), 150);
     }
 
-    document.getElementById("go").onclick = () => navigateToSKU(document.getElementById("q").value);
+    document.getElementById("go").onclick = () => {
+      navigateToSKU(document.getElementById("q").value);
+    };
 
     // =============================
-    // Camera (More stable on mobile)
+    // Camera Scan Page
     // =============================
     const scanResult = document.getElementById("scanResult");
     const startScanBtn = document.getElementById("startScan");
@@ -865,19 +916,8 @@
     let scanner = null;
     let scanning = false;
 
-    function setScanText(msg){ scanResult.textContent = msg; }
-
-    async function pickBackCameraId(){
-      try{
-        const devices = await Html5Qrcode.getCameras();
-        if (!devices || !devices.length) return null;
-
-        // حاول إيجاد back/rear/environment
-        const preferred = devices.find(d => /back|rear|environment/i.test(d.label));
-        return (preferred ? preferred.id : devices[devices.length - 1].id);
-      } catch {
-        return null;
-      }
+    function setScanText(msg){
+      scanResult.textContent = msg;
     }
 
     async function startScanner(){
@@ -890,25 +930,30 @@
         setScanText("جارٍ تشغيل الكاميرا...");
         setStatus("الكاميرا تعمل - وجّهها نحو الباركود");
 
-        const camId = await pickBackCameraId();
-
         await scanner.start(
-          camId ? { deviceId: { exact: camId } } : { facingMode: "environment" },
-          { fps: 12, qrbox: { width: 260, height: 260 } },
+          { facingMode: "environment" },
+          { fps: 12, qrbox: 260 },
           async (decodedText) => {
+            // SUCCESS: barcode decoded
             setScanText("تمت القراءة: " + decodedText);
             document.getElementById("q").value = decodedText;
 
+            // stop scanner then go to map + auto navigate
             await stopScanner(true);
-            navigateToSKU(decodedText);
+
+            showPage("map");
+            setTimeout(() => {
+              // Auto go
+              navigateToSKU(decodedText);
+            }, 180);
           },
           () => {}
         );
 
-        setScanText("الكاميرا جاهزة. ثبّت الهاتف وحسّن الإضاءة.");
+        setScanText("الكاميرا جاهزة. حاول تثبيت الهاتف وتحسين الإضاءة.");
       } catch (err){
         scanning = false;
-        setScanText("تعذر تشغيل الكاميرا. افتح الموقع عبر HTTPS وأعطِ إذن الكاميرا.");
+        setScanText("تعذر تشغيل الكاميرا. تأكد من HTTPS ومن إعطاء الإذن للكاميرا.");
         setStatus("فشل تشغيل الكاميرا");
         console.error(err);
       }
@@ -917,7 +962,9 @@
     async function stopScanner(silent=false){
       if (!scanner) { scanning = false; return; }
       try{
-        if (scanner.isScanning) await scanner.stop();
+        if (scanner.isScanning) {
+          await scanner.stop();
+        }
         await scanner.clear();
       } catch(e){
         // ignore
@@ -937,20 +984,20 @@
       const val = prompt("أدخل SKU/Barcode يدوياً:");
       if (!val) return;
       document.getElementById("q").value = val.trim();
-      navigateToSKU(val.trim());
+      showPage("map");
+      setTimeout(() => navigateToSKU(val.trim()), 120);
     };
 
+    // When switching pages: if leaving scan page, stop camera for safety
+    tabMap.addEventListener("click", () => stopScanner(true));
+
     // =============================
-    // Auto-load
+    // Auto-load stored data
     // =============================
     loadGraphFromLocalStorage();
     loadProductsFromLocalStorage();
     applyModeUI();
     setStatus("جاهز");
-
-    // أول فتح: تأكد Leaflet يحسب الحجم صح
-    setTimeout(() => map.invalidateSize(true), 300);
-    setTimeout(() => map.invalidateSize(true), 900);
   </script>
 </body>
 </html>
