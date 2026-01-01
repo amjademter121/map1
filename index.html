@@ -952,16 +952,10 @@
         await scanner.start(
           camId ? { deviceId: { exact: camId } } : { facingMode: "environment" },
           {
-         fps: 15,
-         qrbox: { width: 420, height: 200 },   // أفضل للباركود الخطي الصغير
-         formatsToSupport: barcodeFormatsOnly(),
-
-          // ميزات تساعد كثير على الموبايل إذا الجهاز يدعمها
-         rememberLastUsedCamera: true,
-         showTorchButtonIfSupported: true,
-         showZoomSliderIfSupported: true,
-         defaultZoomValueIfSupported: 2
-         },
+            fps: 12,
+            qrbox: { width: 320, height: 160 }, // أفضل للـ EAN / UPC
+            formatsToSupport: barcodeFormatsOnly() // Barcode فقط (بدون QR)
+          },
           async (decodedText) => {
             const code = String(decodedText || "").trim();
             if (!code) return;
