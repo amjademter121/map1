@@ -951,7 +951,7 @@
           camId ? { deviceId: { exact: camId } } : { facingMode: "environment" },
           {
             fps: 12,
-            qrbox: { width: 260, height: 260 },
+            qrbox: { width: 320, height: 160 }, // أفضل للـ EAN / UPC
             formatsToSupport: barcodeFormatsOnly() // Barcode فقط (بدون QR)
           },
           async (decodedText) => {
