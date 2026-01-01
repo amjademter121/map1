@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Indoor Map MVP - Mobile Ready (Safari Fix)</title>
+  <title>Indoor Map MVP - Mobile Ready (Safari + Barcode)</title>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Barcode Scanner (Camera) -->
+  <!-- Camera Scanner (Barcode/QR) -->
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
@@ -38,7 +38,6 @@
       -webkit-text-size-adjust: 100%;
     }
 
-    /* ============ Mobile-first Layout ============ */
     .app{
       min-height: 100vh;
       min-height: 100dvh;
@@ -48,7 +47,6 @@
       padding: 12px;
     }
 
-    /* Controls */
     .controls{
       background: linear-gradient(180deg, rgba(17,31,59,.95), rgba(15,27,51,.95));
       border: 1px solid rgba(34,52,87,.9);
@@ -167,13 +165,11 @@
     .btn.success{ background: linear-gradient(180deg, rgba(0,200,83,.9), rgba(0,150,62,.9)); border-color: rgba(0,200,83,.55); }
     .btn.danger{ background: linear-gradient(180deg, rgba(255,77,79,.9), rgba(200,40,42,.9)); border-color: rgba(255,77,79,.55); }
     .btn.warning{ background: linear-gradient(180deg, rgba(255,176,32,.92), rgba(200,130,20,.92)); border-color: rgba(255,176,32,.55); color:#0b1220; font-weight:700; }
-
     .mini{ width:auto; padding: 10px 10px; font-size: 13px; }
 
     .hint{ font-size: 12px; color: var(--muted); line-height: 1.6; margin: 6px 0 0; }
     .divider{ border:0; border-top: 1px solid rgba(34,52,87,.75); margin: 10px 0; }
 
-    /* Main content */
     .main{
       flex:1;
       background: linear-gradient(180deg, rgba(17,31,59,.55), rgba(15,27,51,.35));
@@ -209,28 +205,24 @@
       padding: 12px;
       min-height: 0;
       flex:1;
-      position: relative; /* مهم لأن الصفحات ستكون absolute عند الإخفاء */
-    }
-
-    /* ===== Safari Fix for tabs/pages =====
-       بدل display:none (يسبب مشاكل في Safari + كاميرا)
-       نخفي بالـ opacity + pointer-events
-    */
-    .page{
-      display: block;
-      height: 100%;
-      opacity: 0;
-      pointer-events: none;
-      position: absolute;
-      inset: 0;
-    }
-    .page.active{
-      opacity: 1;
-      pointer-events: auto;
       position: relative;
     }
 
-    /* Map */
+    /* Safari Fix for page switching */
+    .page{
+      display:block;
+      height:100%;
+      opacity:0;
+      pointer-events:none;
+      position:absolute;
+      inset:0;
+    }
+    .page.active{
+      opacity:1;
+      pointer-events:auto;
+      position:relative;
+    }
+
     #map{
       height: 60vh;
       height: 60dvh;
@@ -242,7 +234,6 @@
       touch-action: manipulation;
     }
 
-    /* Scanner */
     #reader{
       width: 100%;
       max-width: 560px;
@@ -266,7 +257,6 @@
       word-break: break-word;
     }
 
-    /* Desktop enhancement */
     @media (min-width: 981px){
       .app{
         display:grid;
@@ -297,7 +287,7 @@
       <div class="brand">
         <div>
           <h1>نظام خريطة متجر + باركود</h1>
-          <div class="hint">نسخة مهيأة للموبايل + إصلاح Safari للتبديل والكاميرا</div>
+          <div class="hint">Barcode فقط + إضافة منتج بالباركود (Admin)</div>
         </div>
         <span class="pill" id="modeBadge">الوضع: مستخدم</span>
       </div>
@@ -327,7 +317,7 @@
       <div class="section">
         <h2>الوضع</h2>
         <button class="btn warning" id="toggleMode" type="button">التبديل إلى وضع الإدارة</button>
-        <p class="hint">وضع الإدارة لإضافة نقاط الممرات والمنتجات.</p>
+        <p class="hint">في وضع الإدارة يمكنك إضافة المنتجات والمسارات.</p>
       </div>
 
       <!-- ADMIN -->
@@ -349,7 +339,7 @@
       <div class="section admin-only" style="display:none;">
         <h2>إدارة المنتجات</h2>
         <div class="field">
-          <label>SKU (أو Barcode)</label>
+          <label>Barcode / SKU</label>
           <input id="sku" placeholder="629100..." inputmode="numeric" />
         </div>
         <div class="field">
@@ -364,13 +354,13 @@
           <button class="btn mini" id="loadProducts" type="button">تحميل المنتجات</button>
           <button class="btn mini danger" id="clearProducts" type="button">مسح المنتجات</button>
         </div>
+
+        <p class="hint">يمكنك أيضًا إضافة المنتج عبر صفحة الكاميرا بزر: "مسح لإضافة منتج".</p>
       </div>
 
       <div class="section">
         <h2>تنبيه مهم</h2>
-        <p class="hint">
-          لا تفتح الملف كـ (file://). استخدم GitHub Pages أو أي HTTPS لكي تعمل الكاميرا في Safari.
-        </p>
+        <p class="hint">لا تفتح الملف كـ (file://). استخدم GitHub Pages (HTTPS) لكي تعمل الكاميرا على Safari.</p>
       </div>
     </aside>
 
@@ -390,17 +380,23 @@
         <!-- SCAN PAGE -->
         <section class="page" id="pageScan">
           <div class="scannerCard">
-            <h2 style="margin:0 0 10px; font-size:16px;">فحص الباركود بالكاميرا</h2>
+            <h2 style="margin:0 0 10px; font-size:16px;">فحص الباركود بالكاميرا (Barcode فقط)</h2>
             <div id="reader"></div>
 
             <div class="row" style="margin-top:12px;">
-              <button class="btn primary" id="startScan" type="button">تشغيل الكاميرا</button>
+              <button class="btn primary" id="startScan" type="button">تشغيل الكاميرا (بحث)</button>
               <button class="btn" id="stopScan" type="button">إيقاف الكاميرا</button>
               <button class="btn" id="useManual" type="button">إدخال يدوي</button>
+
+              <!-- يظهر فقط في وضع الإدارة -->
+              <button class="btn success admin-only" id="scanToAdd" type="button" style="display:none;">
+                مسح لإضافة منتج
+              </button>
             </div>
 
             <p class="hint">
-              في Safari: انتقل لصفحة الكاميرا أولاً، ثم اضغط "تشغيل الكاميرا" (لا تحاول تشغيلها تلقائيًا).
+              للاستخدام الطبيعي: امسح الباركود → سيتم وضعه في البحث والذهاب للمنتج. <br>
+              للإدارة: اضغط "مسح لإضافة منتج" → امسح → ثم اضغط على الخريطة لحفظ مكان المنتج.
             </p>
           </div>
 
@@ -429,10 +425,10 @@
       tabMap.classList.toggle("active", isMap);
       tabScan.classList.toggle("active", !isMap);
 
-      // Safari: force reflow to ensure visual update when switching "hidden" pages
+      // Safari: force reflow
       document.body.offsetHeight;
 
-      // Update hash to make state stable on mobile
+      // State via hash
       location.hash = isMap ? "#map" : "#scan";
 
       if (isMap) {
@@ -452,7 +448,6 @@
       e.preventDefault();
       showPage("scan");
       setStatus("أنت الآن في صفحة الكاميرا");
-      // لا تشغل الكاميرا تلقائياً (Safari قد يرفض بدون click مباشر على زر)
     });
 
     window.addEventListener("load", () => {
@@ -492,7 +487,6 @@
     L.imageOverlay('floor1.png', bounds).addTo(map);
     map.fitBounds(bounds);
 
-    // تحديث عند تدوير الشاشة (مهم للموبايل)
     window.addEventListener("orientationchange", () => {
       setTimeout(() => map.invalidateSize(true), 400);
     });
@@ -745,7 +739,7 @@
       if (!isAdmin) return;
       const sku = document.getElementById("sku").value.trim();
       const name = document.getElementById("pname").value.trim();
-      if (!sku) { alert("أدخل SKU أولاً."); return; }
+      if (!sku) { alert("أدخل الباركود (SKU) أولاً."); return; }
 
       pendingProduct = { sku, name };
       pickingProduct = true;
@@ -799,7 +793,7 @@
         saveProductsToLocalStorage();
 
         L.marker([y, x]).addTo(map).bindPopup(
-          `تم حفظ المنتج<br>SKU: ${pendingProduct.sku}${pendingProduct.name ? "<br>اسم: " + pendingProduct.name : ""}`
+          `تم حفظ المنتج<br>Barcode: ${pendingProduct.sku}${pendingProduct.name ? "<br>اسم: " + pendingProduct.name : ""}`
         ).openPopup();
 
         pendingProduct = null;
@@ -842,17 +836,17 @@
     // =============================
     function navigateToSKU(rawSku){
       const q = (rawSku || "").trim().toLowerCase();
-      if (!q) { alert("اكتب SKU للبحث."); return; }
+      if (!q) { alert("اكتب Barcode / SKU للبحث."); return; }
 
       const item = products.find(p => p.sku.toLowerCase() === q);
-      if (!item) { alert("SKU غير موجود. اطلب من الإدارة إضافته."); return; }
+      if (!item) { alert("الباركود غير موجود. اطلب من الإدارة إضافته."); return; }
 
       if (!meMarker) { alert("حدد موقعك أولاً."); return; }
       if (nodes.length < 2) { alert("شبكة الممرات غير جاهزة. اطلب من الإدارة تحميلها."); return; }
 
       if (itemMarker) map.removeLayer(itemMarker);
       itemMarker = L.marker([item.y, item.x]).addTo(map)
-        .bindPopup(`المنتج<br>SKU: ${item.sku}${item.name ? "<br>اسم: " + item.name : ""}`)
+        .bindPopup(`المنتج<br>Barcode: ${item.sku}${item.name ? "<br>اسم: " + item.name : ""}`)
         .openPopup();
 
       const mePos = meMarker.getLatLng();
@@ -893,7 +887,6 @@
       const group = L.featureGroup([meMarker, itemMarker, pathLineOutline, pathLine]);
       map.fitBounds(group.getBounds().pad(0.2));
       setStatus("تم رسم أقصر مسار إلى المنتج");
-
       showPage("map");
     }
 
@@ -902,15 +895,19 @@
     });
 
     // =============================
-    // Camera (More stable on mobile + Safari)
+    // Camera (Barcode only) + Scan-to-Add Product
     // =============================
     const scanResult = document.getElementById("scanResult");
     const startScanBtn = document.getElementById("startScan");
     const stopScanBtn = document.getElementById("stopScan");
     const useManualBtn = document.getElementById("useManual");
+    const scanToAddBtn = document.getElementById("scanToAdd");
 
     let scanner = null;
     let scanning = false;
+
+    // وضع المسح: بحث أو إضافة منتج
+    let scanMode = "search"; // "search" | "addProduct"
 
     function setScanText(msg){ scanResult.textContent = msg; }
 
@@ -925,6 +922,19 @@
       }
     }
 
+    function barcodeFormatsOnly(){
+      // بعض الأجهزة قد لا تدعم كل الفورمات، لكن هذا يركز على الباركود الشائع
+      return [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.ITF
+      ];
+    }
+
     async function startScanner(){
       if (scanning) return;
       scanning = true;
@@ -933,19 +943,44 @@
         if (!scanner) scanner = new Html5Qrcode("reader");
 
         setScanText("جارٍ تشغيل الكاميرا...");
-        setStatus("الكاميرا تعمل - وجّهها نحو الباركود");
+        setStatus(scanMode === "addProduct" ? "مسح لإضافة منتج: وجّه الكاميرا للباركود" : "مسح للبحث: وجّه الكاميرا للباركود");
 
         const camId = await pickBackCameraId();
 
         await scanner.start(
           camId ? { deviceId: { exact: camId } } : { facingMode: "environment" },
-          { fps: 12, qrbox: { width: 260, height: 260 } },
+          {
+            fps: 12,
+            qrbox: { width: 260, height: 260 },
+            formatsToSupport: barcodeFormatsOnly() // Barcode فقط (بدون QR)
+          },
           async (decodedText) => {
-            setScanText("تمت القراءة: " + decodedText);
-            document.getElementById("q").value = decodedText;
+            const code = String(decodedText || "").trim();
+            if (!code) return;
 
+            setScanText("تمت القراءة: " + code);
+
+            // وضع إضافة منتج (Admin)
+            if (isAdmin && scanMode === "addProduct") {
+              document.getElementById("sku").value = code;
+              document.getElementById("pname").value = "";
+
+              pendingProduct = { sku: code, name: "" };
+              pickingProduct = true;
+
+              await stopScanner(true);
+              showPage("map");
+              setStatus("تم التقاط الباركود. اضغط على مكان المنتج على الخريطة لحفظه");
+              alert("تم التقاط الباركود. الآن اضغط على مكان المنتج على الخريطة لحفظه.");
+
+              scanMode = "search"; // رجّع للوضع الطبيعي
+              return;
+            }
+
+            // الوضع الطبيعي: بحث وتوجيه
+            document.getElementById("q").value = code;
             await stopScanner(true);
-            navigateToSKU(decodedText);
+            navigateToSKU(code);
           },
           () => {}
         );
@@ -953,7 +988,7 @@
         setScanText("الكاميرا جاهزة. ثبّت الهاتف وحسّن الإضاءة.");
       } catch (err){
         scanning = false;
-        setScanText("تعذر تشغيل الكاميرا. تأكد من HTTPS ومن إعطاء الإذن للكاميرا في Safari.");
+        setScanText("تعذر تشغيل الكاميرا. تأكد من HTTPS ومن إعطاء إذن الكاميرا في Safari.");
         setStatus("فشل تشغيل الكاميرا");
         console.error(err);
       }
@@ -975,14 +1010,31 @@
       }
     }
 
-    startScanBtn.addEventListener("click", () => startScanner());
+    startScanBtn.addEventListener("click", () => {
+      scanMode = "search";
+      startScanner();
+    });
+
     stopScanBtn.addEventListener("click", () => stopScanner(false));
 
     useManualBtn.addEventListener("click", () => {
-      const val = prompt("أدخل SKU/Barcode يدوياً:");
+      const val = prompt("أدخل Barcode يدوياً:");
       if (!val) return;
-      document.getElementById("q").value = val.trim();
-      navigateToSKU(val.trim());
+      const code = val.trim();
+      document.getElementById("q").value = code;
+      navigateToSKU(code);
+    });
+
+    // زر: مسح لإضافة منتج (Admin فقط)
+    scanToAddBtn.addEventListener("click", () => {
+      if (!isAdmin) {
+        alert("هذه الميزة تعمل في وضع الإدارة فقط.");
+        return;
+      }
+      scanMode = "addProduct";
+      showPage("scan");
+      setStatus("وضع إضافة منتج: امسح الباركود ثم اضغط على الخريطة لتحديد مكانه");
+      startScanner();
     });
 
     // =============================
@@ -993,7 +1045,6 @@
     applyModeUI();
     setStatus("جاهز");
 
-    // أول فتح: Leaflet أحياناً يحتاج invalidate
     setTimeout(() => map.invalidateSize(true), 300);
     setTimeout(() => map.invalidateSize(true), 900);
   </script>
