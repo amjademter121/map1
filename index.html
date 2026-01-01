@@ -923,17 +923,19 @@
     }
 
     function barcodeFormatsOnly(){
-      // بعض الأجهزة قد لا تدعم كل الفورمات، لكن هذا يركز على الباركود الشائع
-      return [
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.ITF
-      ];
-    }
+  return [
+    Html5QrcodeSupportedFormats.EAN_13,
+    Html5QrcodeSupportedFormats.EAN_8,   // مهم لـ 8 أرقام
+    Html5QrcodeSupportedFormats.UPC_A,
+    Html5QrcodeSupportedFormats.UPC_E,
+    Html5QrcodeSupportedFormats.CODE_128, // مهم جدًا للباركود الصغير
+    Html5QrcodeSupportedFormats.CODE_39,
+    Html5QrcodeSupportedFormats.ITF,
+    Html5QrcodeSupportedFormats.CODABAR,
+    Html5QrcodeSupportedFormats.CODE_93
+  ];
+}
+
 
     async function startScanner(){
       if (scanning) return;
@@ -950,10 +952,17 @@
         await scanner.start(
           camId ? { deviceId: { exact: camId } } : { facingMode: "environment" },
           {
-            fps: 12,
-            qrbox: { width: 320, height: 160 }, // أفضل للـ EAN / UPC
-            formatsToSupport: barcodeFormatsOnly() // Barcode فقط (بدون QR)
-          },
+         fps: 15,
+         qrbox: { width: 420, height: 200 },   // أفضل للباركود الخطي الصغير
+         formatsToSupport: barcodeFormatsOnly(),
+
+          // ميزات تساعد كثير على الموبايل إذا الجهاز يدعمها
+         rememberLastUsedCamera: true,
+         showTorchButtonIfSupported: true,
+         showZoomSliderIfSupported: true,
+         defaultZoomValueIfSupported: 2
+}
+,
           async (decodedText) => {
             const code = String(decodedText || "").trim();
             if (!code) return;
